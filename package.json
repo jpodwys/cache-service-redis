@@ -1,0 +1,36 @@
+{
+  "name": "cache-service-redis",
+  "version": "0.1.0",
+  "description": "A redis plugin for cache-service.",
+  "main": "redisCacheModule.js",
+  "dependencies": {
+    "redis": "0.12.1"
+  },
+  "devDependencies": {
+    "mocha": "2.2.4",
+    "expect": "1.6.0",
+    "redis-js": "0.0.12-6"
+  },
+  "scripts": {
+    "test": "bin/tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jpodwys/cache-service-redis.git"
+  },
+  "author": "Joe Podwys",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jpodwys/cache-service-redis/issues"
+  },
+  "homepage": "https://github.com/jpodwys/cache-service-redis#readme",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "cache-service",
+    "cache",
+    "node",
+    "redis"
+  ]
+}
