@@ -34,6 +34,7 @@ function redisCacheModule(config){
    * @param {string} cleanKey
    */
   self.get = function(key, cb, cleanKey){
+    log(false, 'Attempting to get key:', {key: key});
     try {
       cacheKey = (cleanKey) ? cleanKey : key;
       log(false, 'Attempting to get key:', {key: cacheKey});
@@ -82,6 +83,7 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.set = function(key, value, expiration, cb){
+    log(false, 'Attempting to set key:', {key: key, value: value});
     try {
       if(!self.readOnly){
         expiration = expiration || self.expiration;
@@ -153,6 +155,7 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.flushAll = function(cb){
+    log(false, 'Attempting to flush all data.');
     try {
       self.db.flushall();
       log(false, 'Flushing all data from cache of type ' + self.type);
