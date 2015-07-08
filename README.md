@@ -1,6 +1,6 @@
 # cache-service-redis
 
-* A redis plugin for [cache-service](https://github.com/jpodwys/cache-service)
+* A [redis](https://github.com/mranney/node_redis) plugin for [cache-service](https://github.com/jpodwys/cache-service)
 * AND a standalone redis wrapper
 
 # Basic Usage
