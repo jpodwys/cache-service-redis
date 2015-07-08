@@ -36,7 +36,7 @@ function redisCacheModule(config){
   self.get = function(key, cb, cleanKey){
     log(false, 'Attempting to get key:', {key: key});
     try {
-      cacheKey = (cleanKey) ? cleanKey : key;
+      var cacheKey = (cleanKey) ? cleanKey : key;
       log(false, 'Attempting to get key:', {key: cacheKey});
       self.db.get(cacheKey, function(err, result){
         try {
