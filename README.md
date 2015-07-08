@@ -7,7 +7,7 @@
 
 Require and instantiate
 ```javascript
-var csRedis = require('cache-service-redis');
+var csRedfis = require('cache-service-redis');
 
 var cacheModuleConfig = {redisEnv: 'REDISCLOUD_URL};
 var redisCache = new csRedis(cacheModuleConfig);
@@ -18,19 +18,41 @@ Cache!
 redisCache.set('key', 'value');
 ```
 
-# Benefits of Using cache-service-redis
+# Benefits of Using `cache-service-redis`
 
 If you're using `cache-service-redis` with `cache-service`, the benefits are obvious. However, it's also a great standalone redis wrapper! Here's why:
 
 * You can set JavaScript objects as values and `cache-service-redis` automatically handles serialization/deserialization.
 * A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list.
 * `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla redis does not let `.mset()` set expirations at all).
-* Built-in logging with a `verbose flag`
+* Built-in logging with a `verbose` flag.
 * Easy config handling--pass the name of an ENV OR the redis connection config string OR all redis connection params.
 
 # Cache Module Configuration Options
 
-When using `cache-service-redis` with `cache-service`, these options are provided in addition to [`cache-service`'s own default options](https://github.com/jpodwys/cache-service/tree/breaking_out_cache_modules#cache-module-configuration-object).
+## type
+
+An arbitrary identifier you can assign so you know which cache is responsible for logs and errors.
+
+* type: string
+* default: 'redis'
+
+## defaultExpiration
+
+The expiration to include when executing cache set commands. Can be overridden via `.set()`'s optional expiraiton param.
+
+* type: int
+* default: 900
+* measure: seconds
+
+## verbose
+
+> When used with `cache-service`, this property is overridden by `cache-service`'s `verbose` value.
+
+When false, `cache-service-redis` will log only errors. When true, `cache-service-redis` will log all activity (useful for testing and debugging).
+
+* type: boolean
+* default: false
 
 ## redisData
 
@@ -62,7 +84,7 @@ If you have a redis URL contained in an env variable (in process.env[redisEnv]),
 
 # API
 
-Although this is a redis wrapper, its API differs in some small cases from redis's own API both because the redis API is sometimes dumb and because all `cache-service` compatible cache modules match [`cache-service`'s API](https://github.com/jpodwys/cache-service/tree/breaking_out_cache_modules#api).
+Although this is a redis wrapper, its API differs in some small cases from redis's own API both because the redis API is sometimes dumb and because all `cache-service` compatible cache modules match [`cache-service`'s API](https://github.com/jpodwys/cache-service#api).
 
 ## .get(key, callback (err, response))
 
