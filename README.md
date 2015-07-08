@@ -20,13 +20,13 @@ redisCache.set('key', 'value');
 
 # Benefits of Using `cache-service-redis`
 
-If you're using `cache-service-redis` with `cache-service`, the benefits are obvious. However, it's also a great standalone redis wrapper! Here's why:
+If you're using `cache-service-redis` with `cache-service`, the benefits are obvious. However, it's also a great standalone `redis` wrapper! Here's why:
 
 * You can set JavaScript objects as values and `cache-service-redis` automatically handles serialization/deserialization.
 * A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list.
-* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla redis does not let `.mset()` set expirations at all).
+* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla `redis` does not let `.mset()` set expirations at all).
 * Built-in logging with a `verbose` flag.
-* Easy config handling--pass the name of an ENV OR the redis connection config string OR all redis connection params.
+* Easy config handling--pass the name of an ENV OR the `redis` connection config string OR all `redis` connection params.
 
 # Cache Module Configuration Options
 
@@ -135,6 +135,8 @@ Delete a key or an array of keys and their associated values.
 * count: type: int
 
 ## .flush(cb)
+
+> When used with `cache-service`, use `cacheService.flushAll()`.
 
 Flush all keys and values from an instance of cache-service.
 
