@@ -4,7 +4,7 @@ A redis plugin for cache-service, or a standalone redis wrapper.
 
 # Cache Module Configuration Options
 
-## redisData (only for use with `type` 'redis')
+## redisData
 
 This is the most generic way to pass in your redis configuraiton options.
 
@@ -20,13 +20,13 @@ var redisData = {
 }
 ```
 
-## redisUrl (only for use with `type` 'redis')
+## redisUrl
 
 If you have all of your redis params already prepared as a URL in the following format: `http://uri:password@hostname:port`, then you can simply pass that URL with the object key `redisUrl`.
 
 * type: string
 
-## redisEnv (only for use with `type` 'redis')
+## redisEnv
 
 If you have a redis URL contained in an env variable (in process.env[redisEnv]), cache-service can retrieve it for you if you pass the env variable name with the object key `redisEnv`.
 
