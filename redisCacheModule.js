@@ -173,7 +173,7 @@ function redisCacheModule(config){
    * Initialize redisCacheModule given the provided constructor params
    */
   function init(){
-    self.type = config.type || 'redis-standalone';
+    self.type = config.type || 'redis';
     if(config.redisMock){
       self.db = config.redisMock;
     }
