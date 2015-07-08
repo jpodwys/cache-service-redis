@@ -84,7 +84,7 @@ If you have a redis URL contained in an env variable (in process.env[redisEnv]),
 
 # API
 
-Although this is a redis wrapper, its API differs in some small cases from redis's own API both because the redis API is sometimes dumb and because all `cache-service` compatible cache modules match [`cache-service`'s API](https://github.com/jpodwys/cache-service#api).
+Although this is a redis wrapper, its API differs in some small cases from redis's own API both because the redis API is sometimes dumb and because all `cache-service`-compatible cache modules match [`cache-service`'s API](https://github.com/jpodwys/cache-service#api).
 
 ## .get(key, callback (err, response))
 
