@@ -19,7 +19,7 @@ function redisCacheModule(config){
   var self = this;
   config = config || {};
   self.verbose = config.verbose || false;
-  self.expiration = config.defaultExpiration || 900;
+  self.defaultExpiration = config.defaultExpiration || 900;
   self.readOnly = (typeof config.readOnly === 'boolean') ? config.readOnly : false;
   self.checkOnPreviousEmpty = (typeof config.checkOnPreviousEmpty === 'boolean') ? config.checkOnPreviousEmpty : true;
 
@@ -86,7 +86,7 @@ function redisCacheModule(config){
     log(false, 'Attempting to set key:', {key: key, value: value});
     try {
       if(!self.readOnly){
-        expiration = expiration || self.expiration;
+        expiration = expiration || self.defaultExpiration;
         if(typeof value === 'object'){
           try {
             value = JSON.stringify(value);
@@ -113,7 +113,7 @@ function redisCacheModule(config){
     var multi = self.db.multi();
     for(key in obj){
       if(obj.hasOwnProperty(key)){
-        var tempExpiration = expiration || self.expiration;
+        var tempExpiration = expiration || self.defaultExpiration;
         var value = obj[key];
         if(typeof value === 'object' && value.cacheValue){
           tempExpiration = value.expiration || tempExpiration;
@@ -205,7 +205,7 @@ function redisCacheModule(config){
           process.on('SIGTERM', function() {
             self.db.quit();
           });
-          log(false, 'Redis client created with the following defaults:', {expiration: self.expiration, verbose: self.verbose, readOnly: self.readOnly});
+          log(false, 'Redis client created with the following defaults:', {expiration: self.defaultExpiration, verbose: self.verbose, readOnly: self.readOnly});
         } else {
           self.db = false;
           log(false, 'Redis client not created: no redis config provided');
