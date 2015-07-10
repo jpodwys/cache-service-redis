@@ -7,7 +7,7 @@ var key = 'key';
 var value = 'value';
 
 beforeEach(function(){
-  redisCache.flushAll();
+  redisCache.flush();
 });
 
 describe('redisCacheModule Tests', function () {
@@ -32,14 +32,14 @@ describe('redisCacheModule Tests', function () {
       done();
     });
   });
-  it('Setting several keys then calling .flushAll() should remove all keys', function (done) {
+  it('Setting several keys then calling .flush() should remove all keys', function (done) {
     redisCache.set(key, value);
     redisCache.set('key2', 'value2');
     redisCache.set('key3', 'value3');
     redisCache.db.keys('*', function (err, keys){
       var keyCount = keys.length;
       expect(keyCount).toBe(3);
-      redisCache.flushAll();
+      redisCache.flush();
       redisCache.db.keys('*', function (err, keys){
         keyCount = keys.length;
         expect(keyCount).toBe(0);

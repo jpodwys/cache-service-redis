@@ -134,11 +134,9 @@ Delete a key or an array of keys and their associated values.
 * err: type: object
 * count: type: int
 
-## .flushAll([cb])
+## .flush([cb])
 
-> When used with `cache-service`, use `cacheService.flush()`.
-
-Flush all keys and values from an instance of cache-service.
+Flush all keys and values.
 
 * callback: type: function
 

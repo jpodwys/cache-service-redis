@@ -4,7 +4,7 @@ var redis = require('redis');
  * redisCacheModule constructor
  * @constructor
  * @param config: {
- *    type:                 {string | 'redis-standalone'}
+ *    type:                 {string | 'redis'}
  *    verbose:              {boolean | false},
  *    expiration:           {integer | 900},
  *    readOnly:             {boolean | false},
@@ -154,7 +154,7 @@ function redisCacheModule(config){
    * Flush all keys and values from all configured caches in cacheCollection
    * @param {function} cb
    */
-  self.flushAll = function(cb){
+  self.flush = function(cb){
     log(false, 'Attempting to flush all data.');
     try {
       self.db.flushall();
