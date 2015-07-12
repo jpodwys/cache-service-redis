@@ -9,7 +9,7 @@ Require and instantiate
 ```javascript
 var csRedis = require('cache-service-redis');
 
-var cacheModuleConfig = {redisEnv: 'REDISCLOUD_URL};
+var cacheModuleConfig = {redisEnv: 'REDISCLOUD_URL'};
 var redisCache = new csRedis(cacheModuleConfig);
 ```
 
