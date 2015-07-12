@@ -24,7 +24,7 @@ If you're using `cache-service-redis` with `cache-service`, the benefits are obv
 
 * You can set JavaScript objects as values and `cache-service-redis` automatically handles serialization/deserialization.
 * A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list.
-* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla `redis` does not let `.mset()` set expirations at all).
+* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (vanilla `redis` does not let `.mset()` set expirations at all).
 * Built-in logging with a `verbose` flag.
 * Easy config handling--pass the name of an ENV OR the `redis` connection config string OR all `redis` connection params.
 
