@@ -103,6 +103,7 @@ function redisCacheModule(config){
     var expiration = arguments[2] || null;
     var refresh = (arguments.length == 5) ? arguments[3] : null;
     var cb = (arguments.length == 5) ? arguments[4] : arguments[3];
+    cb = cb || noop;
 
     log(false, 'Attempting to set key:', {key: key, value: value});
     try {
@@ -116,7 +117,6 @@ function redisCacheModule(config){
             //Do nothing
           }
         }
-        cb = cb || noop;
         if(refresh){
           self.db.set(key, value, 'nx', 'ex', expiration, function (err, response){
             cb(err, response);
@@ -269,7 +269,7 @@ function redisCacheModule(config){
         if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
           data.refresh(function (err, response){
             if(!err){
-              self.set(key, response, data.lifeSpan, data.refresh, noop);
+              self.set(key, response, data.lifeSpan);
             }
           });
         }
