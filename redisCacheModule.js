@@ -173,6 +173,15 @@ function redisCacheModule(config){
           cb(err, count);
         }
       });
+      if(typeof keys === 'object'){
+        for(var i = 0; i < keys.length; i++){
+          var key = keys[i];
+          refreshKeys[key] = undefined;
+        }
+      }
+      else{
+        refreshKeys[keys] = undefined;
+      }
     } catch (err) {
       log(true, 'Delete failed for cache of type ' + self.type, err);
     }
@@ -186,6 +195,7 @@ function redisCacheModule(config){
     log(false, 'Attempting to flush all data.');
     try {
       self.db.flushall();
+      refreshKeys = {};
       log(false, 'Flushing all data from cache of type ' + self.type);
     } catch (err) {
       log(true, 'Flush failed for cache of type ' + self.type, err);
