@@ -2,7 +2,6 @@ var expect = require('expect');
 var redisMock = require('redis-js');
 var rcModule = require('../../redisCacheModule');
 var redisCache = new rcModule({redisMock: redisMock, backgroundRefreshInterval: 500});
-//redisUrl: 'redis://rediscloud:Eat21m6mQ2QG57hX@pub-redis-11714.us-east-1-2.4.ec2.garantiadata.com:11714'
 
 var key = 'key';
 var value = 'value';
