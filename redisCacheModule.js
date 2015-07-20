@@ -4,14 +4,17 @@ var redis = require('redis');
  * redisCacheModule constructor
  * @constructor
  * @param config: {
- *    type:                 {string | 'redis'}
- *    verbose:              {boolean | false},
- *    expiration:           {integer | 900},
- *    readOnly:             {boolean | false},
- *    checkOnPreviousEmpty  {boolean | true},
- *    redisData:            {object},
- *    redisUrl:             {string},
- *    redisEnv:             {string}
+ *    type:                     {string | 'redis'}
+ *    verbose:                  {boolean | false},
+ *    expiration:               {integer | 900},
+ *    readOnly:                 {boolean | false},
+ *    checkOnPreviousEmpty      {boolean | true},
+ *    backgroundRefreshEnabled  {boolean | true},
+ *    backgroundRefreshInterval {integer | 60000},
+ *    backgroundRefreshMinTtl   {integer | 70000},
+ *    redisData:                {object},
+ *    redisUrl:                 {string},
+ *    redisEnv:                 {string}
  * }
  */
 function redisCacheModule(config){
@@ -90,6 +93,7 @@ function redisCacheModule(config){
    * @param {string} key
    * @param {string | object} value
    * @param {integer} expiration
+   * @param {function} refresh
    * @param {function} cb
    */
   self.set = function(){
