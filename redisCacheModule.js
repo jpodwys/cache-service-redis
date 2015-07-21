@@ -18,7 +18,6 @@ var redis = require('redis');
  * }
  */
 function redisCacheModule(config){
-
   var self = this;
   config = config || {};
   self.verbose = config.verbose || false;
@@ -97,14 +96,12 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.set = function(){
-
     var key = arguments[0];
     var value = arguments[1];
     var expiration = arguments[2] || null;
     var refresh = (arguments.length == 5) ? arguments[3] : null;
     var cb = (arguments.length == 5) ? arguments[4] : arguments[3];
     cb = cb || noop;
-
     log(false, 'Attempting to set key:', {key: key, value: value});
     try {
       if(!self.readOnly){
