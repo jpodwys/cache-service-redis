@@ -76,7 +76,7 @@ describe('redisCacheModule Tests', function () {
       cb(null, 1);
     }
     redisCache.set(key, value, 1, function (){
-      redisCache.set(key, value, 1, refresh, function (err, result){ 
+      redisCache.set(key, value, 1, refresh, function (err, result){
         setTimeout(function(){
           redisCache.get(key, function (err, response){
             expect(response).toBe(null);
