@@ -1,11 +1,7 @@
 var expect = require('expect');
 var redisMock = require('redis-js');
 var rcModule = require('../../redisCacheModule');
-var redisCache = new rcModule({
-  redisMock: redisMock,
-  backgroundRefreshEnabled: true,
-  backgroundRefreshInterval: 500
-});
+var redisCache = new rcModule({redisMock: redisMock, backgroundRefreshInterval: 500});
 
 var key = 'key';
 var value = 'value';
