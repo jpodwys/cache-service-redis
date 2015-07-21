@@ -70,7 +70,7 @@ describe('redisCacheModule Tests', function () {
       });
     });
   });
-  it('Using background refresh should not activate for a key that already exists', function (done) {
+  it.only('Using background refresh should not activate for a key that already exists', function (done) {
     this.timeout(5000);
     var refresh = function(cb){
       cb(null, 1);

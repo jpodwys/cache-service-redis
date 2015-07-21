@@ -180,11 +180,11 @@ function redisCacheModule(config){
       if(typeof keys === 'object'){
         for(var i = 0; i < keys.length; i++){
           var key = keys[i];
-          refreshKeys[key] = undefined;
+          delete refreshKeys[key];
         }
       }
       else{
-        refreshKeys[keys] = undefined;
+        delete refreshKeys[keys];
       }
     } catch (err) {
       log(true, 'Delete failed for cache of type ' + self.type, err);
