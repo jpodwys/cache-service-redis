@@ -121,7 +121,7 @@ function redisCacheModule(config){
               refreshKeys[key] = {expiration: exp, lifeSpan: expiration, refresh: refresh};
             }
             else{
-              self.db.setex(key, expiration, value, cb);
+              self.db.setex(key, expiration, value);
             }
           }); 
         }
