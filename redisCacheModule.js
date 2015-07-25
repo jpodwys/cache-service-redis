@@ -269,7 +269,7 @@ function redisCacheModule(config){
         if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
           data.refresh(function (err, response){
             if(!err){
-              self.set(key, response, data.lifeSpan);
+              self.set(key, response, data.lifeSpan, data.refresh, noop);
             }
           });
         }
