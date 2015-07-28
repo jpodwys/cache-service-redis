@@ -212,7 +212,7 @@ Background refresh is exposed via the `.set()` command as follows:
 cacheModule.set('key', 'value', 300, refresh, cb);
 ```
 
-If you want to pass `refresh`, you must also pass `cb` because if only four params are passed, `cache-service-cache-module` will assume the fourth param is `cb`.
+If you want to pass `refresh`, you must also pass `cb` because if only four params are passed, `cache-service-redis` will assume the fourth param is `cb`.
 
 #### The Refresh Param
 
