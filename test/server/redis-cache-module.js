@@ -76,7 +76,7 @@ describe('redisCacheModule Tests', function () {
   });
   it('Using background refresh should not activate for a key that already exists', function (done) {
     this.timeout(5000);
-    var refresh = function(cb){
+    var refresh = function(key, cb){
       cb(null, 1);
     }
     redisCache.set(key, value, 1, function (){
@@ -92,7 +92,7 @@ describe('redisCacheModule Tests', function () {
   });
   it('Using background refresh should activate for a vacant key and reset it when nearly expired', function (done) {
     this.timeout(5000);
-    var refresh = function(cb){
+    var refresh = function(key, cb){
       cb(null, 1);
     }
     redisCache.set(key, value, 1, refresh, function (err, result){ 
