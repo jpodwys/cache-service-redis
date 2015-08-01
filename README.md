@@ -77,16 +77,9 @@ If you have a redis URL contained in an env variable (in process.env[redisEnv]),
 
 * type: string
 
-## backgroundRefreshEnabled
-
-Whether the background refresh feature is enabled. For a more thorough explanation on `background refresh`, see the [Using Background Refresh](#using-background-refresh) section.
-
-* type: boolean
-* default: false
-
 ## backgroundRefreshInterval
 
-How frequently should all background refresh-enabled keys be scanned to determine whether they should be refreshed.
+How frequently should all background refresh-enabled keys be scanned to determine whether they should be refreshed. For a more thorough explanation on `background refresh`, see the [Using Background Refresh](#using-background-refresh) section.
 
 * type: int
 * default: 60000
@@ -187,18 +180,13 @@ With a typical cache setup, you're left to find the perfect compromise between h
 
 > `cache-service-redis` employs an intelligent background refresh algorithm that makes it so only one dyno executes a background refresh for any given key. You should feel confident that you will not encounter multiple dynos refreshing a single key.
 
-#### Setup
+#### How do I turn it on?
 
-By default, background refresh is off. Turn it on in your `cacheModuleConfig`.
-
-```javascript
-var cModule = require('cache-service-cache-module');
-var cacheModule = new cModule({backgroundRefreshEnabled: true});
-```
+By default, background refresh is off. It will turn itself on the first time you pass a `refresh` param to `.set()`.
 
 #### Configure
 
-Once background refresh is enabled, there are three options you can manipulate. See the API section for more information on them.
+There are three options you can manipulate. See the API section for more information about them.
 
 * `backgroundRefreshInterval`
 * `backgroundRefreshMinTtl`
