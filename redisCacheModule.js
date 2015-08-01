@@ -9,7 +9,6 @@ var redis = require('redis');
  *    expiration:                     {integer | 900},
  *    readOnly:                       {boolean | false},
  *    checkOnPreviousEmpty            {boolean | true},
- *    backgroundRefreshEnabled        {boolean | false},
  *    backgroundRefreshIntervalCheck  {boolean | true},
  *    backgroundRefreshInterval       {integer | 60000},
  *    backgroundRefreshMinTtl         {integer | 70000},
@@ -25,11 +24,11 @@ function redisCacheModule(config){
   self.defaultExpiration = config.defaultExpiration || 900;
   self.readOnly = (typeof config.readOnly === 'boolean') ? config.readOnly : false;
   self.checkOnPreviousEmpty = (typeof config.checkOnPreviousEmpty === 'boolean') ? config.checkOnPreviousEmpty : true;
-  self.backgroundRefreshEnabled = (typeof config.backgroundRefreshEnabled === 'boolean') ? config.backgroundRefreshEnabled : false;
   self.backgroundRefreshIntervalCheck = (typeof config.backgroundRefreshIntervalCheck === 'boolean') ? config.backgroundRefreshIntervalCheck : true;
   self.backgroundRefreshInterval = config.backgroundRefreshInterval || 60000;
   self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
   var refreshKeys = {};
+  var backgroundRefreshEnabled = false;
 
   /**
    ******************************************* PUBLIC FUNCTIONS *******************************************
@@ -124,6 +123,7 @@ function redisCacheModule(config){
             if(!err && response){
               cb(err, response);
               refreshKeys[key] = {expiration: exp, lifeSpan: expiration, refresh: refresh};
+              backgroundRefreshInit();
             }
             else{
               self.db.setex(key, expiration, value, cb);
@@ -267,7 +267,14 @@ function redisCacheModule(config){
         log(true, 'Redis client not created:', err);
       }
     }
-    if(self.backgroundRefreshEnabled){
+  }
+
+  /**
+   * Initialize background refresh
+   */
+  function backgroundRefreshInit(){
+    if(!backgroundRefreshEnabled){
+      backgroundRefreshEnabled = true;
       if(self.backgroundRefreshIntervalCheck){
         if(self.backgroundRefreshInterval > self.backgroundRefreshMinTtl){
           throw new exception('BACKGROUND_REFRESH_INTERVAL_EXCEPTION', 'backgroundRefreshInterval cannot be greater than backgroundRefreshMinTtl.');
