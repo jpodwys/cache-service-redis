@@ -4,24 +4,31 @@ var redis = require('redis');
  * redisCacheModule constructor
  * @constructor
  * @param config: {
- *    type:                 {string | 'redis'}
- *    verbose:              {boolean | false},
- *    expiration:           {integer | 900},
- *    readOnly:             {boolean | false},
- *    checkOnPreviousEmpty  {boolean | true},
- *    redisData:            {object},
- *    redisUrl:             {string},
- *    redisEnv:             {string}
+ *    type:                           {string | 'redis'}
+ *    verbose:                        {boolean | false},
+ *    expiration:                     {integer | 900},
+ *    readOnly:                       {boolean | false},
+ *    checkOnPreviousEmpty            {boolean | true},
+ *    backgroundRefreshIntervalCheck  {boolean | true},
+ *    backgroundRefreshInterval       {integer | 60000},
+ *    backgroundRefreshMinTtl         {integer | 70000},
+ *    redisData:                      {object},
+ *    redisUrl:                       {string},
+ *    redisEnv:                       {string}
  * }
  */
 function redisCacheModule(config){
-
   var self = this;
   config = config || {};
   self.verbose = config.verbose || false;
   self.defaultExpiration = config.defaultExpiration || 900;
   self.readOnly = (typeof config.readOnly === 'boolean') ? config.readOnly : false;
   self.checkOnPreviousEmpty = (typeof config.checkOnPreviousEmpty === 'boolean') ? config.checkOnPreviousEmpty : true;
+  self.backgroundRefreshIntervalCheck = (typeof config.backgroundRefreshIntervalCheck === 'boolean') ? config.backgroundRefreshIntervalCheck : true;
+  self.backgroundRefreshInterval = config.backgroundRefreshInterval || 60000;
+  self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
+  var refreshKeys = {};
+  var backgroundRefreshEnabled = false;
 
   /**
    ******************************************* PUBLIC FUNCTIONS *******************************************
@@ -34,7 +41,10 @@ function redisCacheModule(config){
    * @param {string} cleanKey
    */
   self.get = function(key, cb, cleanKey){
-    log(false, 'Attempting to get key:', {key: key});
+    if(arguments.length < 2){
+      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.get() requires 2 arguments.');
+    }
+    log(false, 'get() called:', {key: key});
     try {
       var cacheKey = (cleanKey) ? cleanKey : key;
       log(false, 'Attempting to get key:', {key: cacheKey});
@@ -58,7 +68,10 @@ function redisCacheModule(config){
    * @param {integer} index
    */
   self.mget = function(keys, cb, index){
-    log(false, 'Attempting to mget keys:', {keys: keys});
+    if(arguments.length < 2){
+      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
+    }
+    log(false, '.mget() called:', {keys: keys});
     self.db.mget(keys, function (err, response){
       var obj = {};
       for(var i = 0; i < response.length; i++){
@@ -80,13 +93,24 @@ function redisCacheModule(config){
    * @param {string} key
    * @param {string | object} value
    * @param {integer} expiration
+   * @param {function} refresh
    * @param {function} cb
    */
-  self.set = function(key, value, expiration, cb){
-    log(false, 'Attempting to set key:', {key: key, value: value});
+  self.set = function(){
+    if(arguments.length < 2){
+      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.set() requires a minimum of 2 arguments.');
+    }
+    var key = arguments[0];
+    var value = arguments[1];
+    var expiration = arguments[2] || null;
+    var refresh = (arguments.length == 5) ? arguments[3] : null;
+    var cb = (arguments.length == 5) ? arguments[4] : arguments[3];
+    cb = cb || noop;
+    log(false, '.set() called:', {key: key, value: value});
     try {
       if(!self.readOnly){
         expiration = expiration || self.defaultExpiration;
+        var exp = (expiration * 1000) + Date.now();
         if(typeof value === 'object'){
           try {
             value = JSON.stringify(value);
@@ -94,11 +118,24 @@ function redisCacheModule(config){
             //Do nothing
           }
         }
-        cb = cb || noop;
-        self.db.setex(key, expiration, value, cb);
+        if(refresh){
+          self.db.set(key, value, 'nx', 'ex', expiration, function (err, response){
+            if(!err && response){
+              cb(err, response);
+              refreshKeys[key] = {expiration: exp, lifeSpan: expiration, refresh: refresh};
+              backgroundRefreshInit();
+            }
+            else{
+              self.db.setex(key, expiration, value, cb);
+            }
+          }); 
+        }
+        else{
+          self.db.setex(key, expiration, value, cb);
+        }
       } 
     }catch (err) {
-      log(true, 'Set failed for cache of type ' + self.type, {name: 'RedisSetException', message: err});
+      log(true, '.set() failed for cache of type ' + self.type, {name: 'RedisSetException', message: err});
     }
   }
 
@@ -109,7 +146,10 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.mset = function(obj, expiration, cb){
-    log(false, 'Attempting to msetex data:', {data: obj});
+    if(arguments.length < 1){
+      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.mset() requires a minimum of 1 argument.');
+    }
+    log(false, '.mset() called:', {data: obj});
     var multi = self.db.multi();
     for(key in obj){
       if(obj.hasOwnProperty(key)){
@@ -138,15 +178,27 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.del = function(keys, cb){
-    log(false, 'Attempting to delete keys:', {keys: keys});
+    if(arguments.length < 1){
+      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
+    }
+    log(false, '.del() called:', {keys: keys});
     try {
       self.db.del(keys, function (err, count){
         if(cb){
           cb(err, count);
         }
       });
+      if(typeof keys === 'object'){
+        for(var i = 0; i < keys.length; i++){
+          var key = keys[i];
+          delete refreshKeys[key];
+        }
+      }
+      else{
+        delete refreshKeys[keys];
+      }
     } catch (err) {
-      log(true, 'Delete failed for cache of type ' + self.type, err);
+      log(true, '.del() failed for cache of type ' + self.type, err);
     }
   }
   
@@ -155,12 +207,12 @@ function redisCacheModule(config){
    * @param {function} cb
    */
   self.flush = function(cb){
-    log(false, 'Attempting to flush all data.');
+    log(false, '.flush() called');
     try {
       self.db.flushall();
-      log(false, 'Flushing all data from cache of type ' + self.type);
+      refreshKeys = {};
     } catch (err) {
-      log(true, 'Flush failed for cache of type ' + self.type, err);
+      log(true, '.flush() failed for cache of type ' + self.type, err);
     }
     if(cb) cb();
   }
@@ -215,6 +267,52 @@ function redisCacheModule(config){
         log(true, 'Redis client not created:', err);
       }
     }
+  }
+
+  /**
+   * Initialize background refresh
+   */
+  function backgroundRefreshInit(){
+    if(!backgroundRefreshEnabled){
+      backgroundRefreshEnabled = true;
+      if(self.backgroundRefreshIntervalCheck){
+        if(self.backgroundRefreshInterval > self.backgroundRefreshMinTtl){
+          throw new exception('BACKGROUND_REFRESH_INTERVAL_EXCEPTION', 'backgroundRefreshInterval cannot be greater than backgroundRefreshMinTtl.');
+        }
+      }
+      setInterval(function(){
+        backgroundRefresh();
+      }, self.backgroundRefreshInterval);
+    }
+  }
+
+  /**
+   * Refreshes all keys that were set with a refresh function
+   */
+  function backgroundRefresh(){
+    for(key in refreshKeys){
+      if(refreshKeys.hasOwnProperty(key)){
+        var data = refreshKeys[key];
+        if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
+          data.refresh(key, function (err, response){
+            if(!err){
+              self.set(key, response, data.lifeSpan, data.refresh, noop);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Instantates an exception to be thrown
+   * @param {string} name
+   * @param {string} message
+   * @return {exception}
+   */
+  function exception(name, message){
+    this.name = name;
+    this.message = message;
   }
 
   /**

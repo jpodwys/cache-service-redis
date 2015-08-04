@@ -3,6 +3,18 @@
 * A [redis](https://github.com/mranney/node_redis) plugin for [cache-service](https://github.com/jpodwys/cache-service)
 * AND a standalone redis wrapper
 
+#### Features
+
+* Background refresh
+* Cache objects--automatic serialization/deserialization of values
+* Easy config handling--pass the name of an ENV OR the `redis` connection config string OR all `redis` connection params
+* Robust API
+* Built-in logging with a `verbose` flag.
+* Compatible with `cache-service` and `superagent-cache`
+* Public access to the underlying `node-cache` instance
+* A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list
+* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla `redis` does not let `.mset()` set expirations at all)
+
 # Basic Usage
 
 Require and instantiate
@@ -18,17 +30,9 @@ Cache!
 redisCache.set('key', 'value');
 ```
 
-# Benefits of Using `cache-service-redis`
-
-If you're using `cache-service-redis` with `cache-service`, the benefits are obvious. However, it's also a great standalone `redis` wrapper! Here's why:
-
-* You can set JavaScript objects as values and `cache-service-redis` automatically handles serialization/deserialization.
-* A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list.
-* `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (vanilla `redis` does not let `.mset()` set expirations at all).
-* Built-in logging with a `verbose` flag.
-* Easy config handling--pass the name of an ENV OR the `redis` connection config string OR all `redis` connection params.
-
 # Cache Module Configuration Options
+
+`cache-service-redis`'s constructor takes an optional config object with any number of the following properties:
 
 ## type
 
@@ -44,15 +48,6 @@ The expiration to include when executing cache set commands. Can be overridden v
 * type: int
 * default: 900
 * measure: seconds
-
-## verbose
-
-> When used with `cache-service`, this property is overridden by `cache-service`'s `verbose` value.
-
-When false, `cache-service-redis` will log only errors. When true, `cache-service-redis` will log all activity (useful for testing and debugging).
-
-* type: boolean
-* default: false
 
 ## redisData
 
@@ -82,6 +77,38 @@ If you have a redis URL contained in an env variable (in process.env[redisEnv]),
 
 * type: string
 
+## backgroundRefreshInterval
+
+How frequently should all background refresh-enabled keys be scanned to determine whether they should be refreshed. For a more thorough explanation on `background refresh`, see the [Using Background Refresh](#using-background-refresh) section.
+
+* type: int
+* default: 60000
+* measure: milliseconds
+
+## backgroundRefreshMinTtl
+
+The maximum ttl a scanned background refresh-enabled key can have without triggering a refresh. This number should always be greater than `backgroundRefreshInterval`.
+
+* type: int
+* default: 70000
+* measure: milliseconds
+
+## backgroundRefreshIntervalCheck
+
+Whether to throw an exception if `backgroundRefreshInterval` is greater than `backgroundRefreshMinTtl`. Setting this property to false is highly discouraged.
+
+* type: boolean
+* default: true
+
+## verbose
+
+> When used with `cache-service`, this property is overridden by `cache-service`'s `verbose` value.
+
+When false, `cache-service-redis` will log only errors. When true, `cache-service-redis` will log all activity (useful for testing and debugging).
+
+* type: boolean
+* default: false
+
 # API
 
 Although this is a redis wrapper, its API differs in some small cases from redis's own API both because the redis API is sometimes dumb and because all `cache-service`-compatible cache modules match [`cache-service`'s API](https://github.com/jpodwys/cache-service#api).
@@ -104,16 +131,19 @@ Retrieve the values belonging to a series of keys. If a key is not found, it wil
 * err: type: object
 * response: type: object, example: {key: 'value', key2: 'value2'...}
 
-## .set(key, value [, expiraiton, callback])
+## .set(key, value, [expiraiton], [refresh(key, cb)], [callback])
+
+> See the [Using Background Refresh](#using-background-refresh) section for more about the `refresh` and `callback` params.
 
 Set a value by a given key.
 
 * key: type: string
 * callback: type: function
 * expiration: type: int, measure: seconds
+* refresh: type: function
 * callback: type: function
 
-## .mset(obj [, expiration, callback])
+## .mset(obj, [expiration], [callback])
 
 Set multiple values to multiple keys
 
@@ -125,7 +155,7 @@ This function exposes a heirarchy of expiration values as follows:
 * If an object with both `cacheValue` and `expiration` as properties is not present, the `expiration` provided to the `.mset()` argument list will be used.
 * If neither of the above is provided, each cache's `defaultExpiration` will be applied.
 
-## .del(keys [, callback (err, count)])
+## .del(keys, [callback (err, count)])
 
 Delete a key or an array of keys and their associated values.
 
@@ -140,11 +170,50 @@ Flush all keys and values.
 
 * callback: type: function
 
-# More Redis Methods
+## .db
 
-If you need access to one of redis's other functions, you can get at the underlying [`node_redis` instance](https://github.com/mranney/node_redis) by tapping into the `.db` property like so:
+This is the underlying [`node_redis` instance](https://github.com/mranney/node_redis). If needed, you can access `redis` functions I haven't abstracted.
+
+# Using Background Refresh
+
+With a typical cache setup, you're left to find the perfect compromise between having a long expiration so that users don't have to suffer through the worst case load time, and a short expiration so data doesn't get stale. `cache-service-redis` eliminates the need to worry about users suffering through the longest wait time by automatically refreshing keys for you. Here's how it works:
+
+> `cache-service-redis` employs an intelligent background refresh algorithm that makes it so only one dyno executes a background refresh for any given key. You should feel confident that you will not encounter multiple dynos refreshing a single key.
+
+#### How do I turn it on?
+
+By default, background refresh is off. It will turn itself on the first time you pass a `refresh` param to `.set()`.
+
+#### Configure
+
+There are three options you can manipulate. See the API section for more information about them.
+
+* `backgroundRefreshInterval`
+* `backgroundRefreshMinTtl`
+* `backgroundRefreshIntervalCheck`
+
+#### Use
+
+Background refresh is exposed via the `.set()` command as follows:
 
 ```javascript
-var underlyingRedisInstance = redisCacheModule.db;
-underlyingRedisInstance.SOME_OTHER_REDIS_FUNCTION();
+cacheModule.set('key', 'value', 300, refresh, cb);
+```
+
+If you want to pass `refresh`, you must also pass `cb` because if only four params are passed, `cache-service-redis` will assume the fourth param is `cb`.
+
+#### The Refresh Param
+
+###### refresh(key, cb(err, response))
+
+* key: type: string: this is the key that is being refreshed
+* cb: type: function: you must trigger this function to pass the data that should replace the current key's value
+
+The `refresh` param MUST be a function that accepts `key` and a callback function that accepts `err` and `response` as follows:
+
+```javascript
+var refresh = function(key, cb){
+  var response = goGetData();
+  cb(null, response);
+}
 ```
