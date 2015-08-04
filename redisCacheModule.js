@@ -305,6 +305,17 @@ function redisCacheModule(config){
   }
 
   /**
+   * Instantates an exception to be thrown
+   * @param {string} name
+   * @param {string} message
+   * @return {exception}
+   */
+  function exception(name, message){
+    this.name = name;
+    this.message = message;
+  }
+
+  /**
    * Error logging logic
    * @param {boolean} isError
    * @param {string} message
