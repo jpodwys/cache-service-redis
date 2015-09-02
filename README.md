@@ -11,7 +11,7 @@
 * Robust API
 * Built-in logging with a `verbose` flag.
 * Compatible with `cache-service` and `superagent-cache`
-* Public access to the underlying `node-cache` instance
+* Public access to the underlying `node-redis` instance
 * A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list
 * `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla `redis` does not let `.mset()` set expirations at all)
 
