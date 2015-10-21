@@ -14,6 +14,7 @@
 * Public access to the underlying `node_redis` instance
 * A more logical API--`.mset()` takes an object of keys and values rather than a comma-separated argument list
 * `.mset()` allows you to set expirations on a per key, per function call, and/or per `cache-service-redis` instance basis (Vanilla `redis` does not let `.mset()` set expirations at all)
+* Built-in [redis mock support](#using-a-redis-mock) for local testing
 
 # Basic Usage
 
@@ -76,6 +77,12 @@ If you have all of your redis params already prepared as a URL in the following 
 If you have a redis URL contained in an env variable (in process.env[redisEnv]), cache-service can retrieve it for you if you pass the env variable name with the object key `redisEnv`.
 
 * type: string
+
+## redisMock
+
+If you want to test your `cache-service-redis` implementation, you can pass a redis mock with this key and `cache-service-redis` will consume it for testing purposes. See the [Using A Redis Mock](#using-a-redis-mock) section for a more throrough explanation.
+
+* type: object that mocks redis
 
 ## backgroundRefreshInterval
 
@@ -216,4 +223,17 @@ var refresh = function(key, cb){
   var response = goGetData();
   cb(null, response);
 }
+```
+
+# Using A Redis Mock
+
+You're likely to want to test your implementation of `cache-service-redis`. In order to write tests that will run anywhere, you'll need to use a redis mock. I recommend using [redis-js](https://www.npmjs.com/package/redis-js). `cache-service-redis` natively supports mock usage as follows:
+
+```javascript
+var redisMock = require('redis-js');
+var rcModule = require('cache-service-redis');
+var redisCache = new rcModule({
+  redisMock: redisMock,
+  backgroundRefreshInterval: 500
+});
 ```
