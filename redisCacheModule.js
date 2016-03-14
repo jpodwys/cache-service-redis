@@ -245,7 +245,7 @@ function redisCacheModule(config){
           if(typeof self.redisData === 'string'){
             var redisURL = require('url').parse(self.redisData);
             self.db = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true, max_attempts: 5});
-            self.db.auth(redisURL.auth.split(":")[1]);
+            if (redisURL.auth !== null) self.db.auth(redisURL.auth.split(":")[1]);
           }
           else{
             self.db = redis.createClient(self.redisData.port, self.redisData.hostname, {no_ready_check: true, max_attempts: 5});
