@@ -115,7 +115,7 @@ function redisCacheModule(config){
           try {
             value = JSON.stringify(value);
           } catch (err) {
-            //Do nothing
+            log(true, 'error converting to JSON, err:', err);
           }
         }
         if(refresh){
