@@ -9,6 +9,8 @@ var redisCache = new rcModule({
 var key = 'key';
 var value = 'value';
 
+function noop() {}
+
 beforeEach(function(){
   redisCache.flush();
 });
@@ -94,7 +96,7 @@ describe('redisCacheModule Tests', function () {
     var refresh = function(key, cb){
       cb(null, 1);
     }
-    redisCache.set(key, value, 1, refresh, function (err, result){ 
+    redisCache.set(key, value, 1, refresh, function (err, result){
       setTimeout(function(){
         redisCache.get(key, function (err, response){
           expect(response).toBe(1);
@@ -103,4 +105,50 @@ describe('redisCacheModule Tests', function () {
       }, 1500);
     });
   });
+  it('Using background refresh should work for multiple keys', function (done) {
+    this.timeout(5000);
+    var refresh = function(key, cb){
+      switch(key) {
+        case 'one':
+          cb(null, 1);
+          break;
+        case 'two':
+          cb(null, 2);
+          break;
+      }
+      cb(null, 1);
+    };
+
+    redisCache.set('one', value, 1, refresh, noop);
+    redisCache.set('two', value, 1, refresh, noop);
+
+    setTimeout(function() {
+      var results = [];
+      function examineResults() {
+        results.forEach(function(result) {
+          if (result.key === 'one') {
+            expect(result.response).toBe(1);
+          } else {
+            expect(result.response).toBe(2);
+          }
+        });
+
+        done();
+      }
+      redisCache.get('one', function (err, response){
+        results.push({key: 'one', response: response});
+        if (results.length === 2) {
+          examineResults();
+        }
+      });
+      redisCache.get('two', function (err, response){
+        results.push({key: 'two', response: response});
+        if (results.length === 2) {
+          examineResults();
+        }
+      });
+
+    }, 1500);
+  });
+
 });
