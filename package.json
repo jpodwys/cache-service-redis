@@ -4,6 +4,7 @@
   "description": "A redis plugin for cache-service.",
   "main": "redisCacheModule.js",
   "dependencies": {
+    "bluebird": "^3.4.1",
     "redis": "0.12.1"
   },
   "devDependencies": {
