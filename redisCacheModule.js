@@ -30,6 +30,71 @@ function redisCacheModule(config){
   var refreshKeys = {};
   var backgroundRefreshEnabled = false;
 
+  var noop = function(){};
+
+  /**
+   * Instantates an Exception to be thrown
+   * @param {string} name
+   * @param {string} message
+   * @return {Exception}
+   */
+  function Exception(name, message){
+    this.name = name;
+    this.message = message;
+  }
+
+  /**
+   * Error logging logic
+   * @param {boolean} isError
+   * @param {string} message
+   * @param {object} data
+   */
+  function log(isError, message, data){
+    var indentifier = 'redisCacheModule: ';
+    if(self.verbose || isError){
+      if(data) {
+        console.log(indentifier + message, data);
+      } else {
+        console.log(indentifier + message);
+      }
+    }
+  }
+
+  /**
+   * Refreshes all keys that were set with a refresh function
+   */
+  function backgroundRefresh(){
+    for(var key in refreshKeys){
+      if(refreshKeys.hasOwnProperty(key)){
+        var data = refreshKeys[key];
+        if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
+          data.refresh(key, function (err, response) {
+            if(!err){
+              self.set(key, response, data.lifeSpan, data.refresh, noop);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Initialize background refresh
+   */
+  function backgroundRefreshInit(){
+    if(!backgroundRefreshEnabled){
+      backgroundRefreshEnabled = true;
+      if(self.backgroundRefreshIntervalCheck){
+        if(self.backgroundRefreshInterval > self.backgroundRefreshMinTtl){
+          throw new Exception('BACKGROUND_REFRESH_INTERVAL_EXCEPTION', 'backgroundRefreshInterval cannot be greater than backgroundRefreshMinTtl.');
+        }
+      }
+      setInterval(function(){
+        backgroundRefresh();
+      }, self.backgroundRefreshInterval);
+    }
+  }
+
   /**
    ******************************************* PUBLIC FUNCTIONS *******************************************
    */
@@ -42,7 +107,7 @@ function redisCacheModule(config){
    */
   self.get = function(key, cb, cleanKey){
     if(arguments.length < 2){
-      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.get() requires 2 arguments.');
+      throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.get() requires 2 arguments.');
     }
     log(false, 'get() called:', {key: key});
     try {
@@ -59,7 +124,7 @@ function redisCacheModule(config){
     } catch (err) {
       cb({name: 'GetException', message: err}, null);
     }
-  }
+  };
 
   /**
    * Get multiple values given multiple keys
@@ -69,7 +134,7 @@ function redisCacheModule(config){
    */
   self.mget = function(keys, cb, index){
     if(arguments.length < 2){
-      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
+      throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
     }
     log(false, '.mget() called:', {keys: keys});
     self.db.mget(keys, function (err, response){
@@ -86,7 +151,7 @@ function redisCacheModule(config){
       }
       cb(err, obj, index);
     });
-  }
+  };
 
   /**
    * Associate a key and value and optionally set an expiration
@@ -98,13 +163,13 @@ function redisCacheModule(config){
    */
   self.set = function(){
     if(arguments.length < 2){
-      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.set() requires a minimum of 2 arguments.');
+      throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.set() requires a minimum of 2 arguments.');
     }
     var key = arguments[0];
     var value = arguments[1];
     var expiration = arguments[2] || null;
-    var refresh = (arguments.length == 5) ? arguments[3] : null;
-    var cb = (arguments.length == 5) ? arguments[4] : arguments[3];
+    var refresh = (arguments.length === 5) ? arguments[3] : null;
+    var cb = (arguments.length === 5) ? arguments[4] : arguments[3];
     cb = cb || noop;
     log(false, '.set() called:', {key: key, value: value});
     try {
@@ -139,7 +204,7 @@ function redisCacheModule(config){
     }catch (err) {
       log(true, '.set() failed for cache of type ' + self.type, {name: 'RedisSetException', message: err});
     }
-  }
+  };
 
   /**
    * Associate multiple keys with multiple values and optionally set expirations per function and/or key
@@ -149,11 +214,11 @@ function redisCacheModule(config){
    */
   self.mset = function(obj, expiration, cb){
     if(arguments.length < 1){
-      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.mset() requires a minimum of 1 argument.');
+      throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.mset() requires a minimum of 1 argument.');
     }
     log(false, '.mset() called:', {data: obj});
     var multi = self.db.multi();
-    for(key in obj){
+    for(var key in obj){
       if(obj.hasOwnProperty(key)){
         var tempExpiration = expiration || self.defaultExpiration;
         var value = obj[key];
@@ -170,9 +235,11 @@ function redisCacheModule(config){
       }
     }
     multi.exec(function (err, replies){
-      if(cb) cb(err, replies);
+      if(cb) {
+        cb(err, replies);
+      }
     });
-  }
+  };
 
   /**
    * Delete the provided keys and their associated values
@@ -181,7 +248,7 @@ function redisCacheModule(config){
    */
   self.del = function(keys, cb){
     if(arguments.length < 1){
-      throw new exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
+      throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
     }
     log(false, '.del() called:', {keys: keys});
     try {
@@ -202,7 +269,7 @@ function redisCacheModule(config){
     } catch (err) {
       log(true, '.del() failed for cache of type ' + self.type, err);
     }
-  }
+  };
 
   /**
    * Flush all keys and values from all configured caches in cacheCollection
@@ -216,8 +283,10 @@ function redisCacheModule(config){
     } catch (err) {
       log(true, '.flush() failed for cache of type ' + self.type, err);
     }
-    if(cb) cb();
-  }
+    if(cb) {
+      cb();
+    }
+  };
 
   /**
    ******************************************* PRIVATE FUNCTIONS *******************************************
@@ -239,22 +308,25 @@ function redisCacheModule(config){
         self.redisData = process.env[config.redisEnv] || null;
       }
       else if(config.redisData){
-        self.redisData = config.redisData
+        self.redisData = config.redisData;
       }
       self.readOnly = (typeof config.readOnly === 'boolean') ? config.readOnly : false;
       try {
         if (self.redisData) {
           if(typeof self.redisData === 'string'){
             var redisURL = require('url').parse(self.redisData);
-            self.db = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true, max_attempts: 5});
-            if (redisURL.auth !== null) self.db.auth(redisURL.auth.split(":")[1]);
-          }
-          else{
-            self.db = redis.createClient(self.redisData.port, self.redisData.hostname, {no_ready_check: true, max_attempts: 5});
+            self.db = redis.createClient(redisURL.port, redisURL.hostname,
+              {'no_ready_check': true, 'max_attempts': 5});
+            if (redisURL.auth !== null) {
+              self.db.auth(redisURL.auth.split(':')[1]);
+            }
+          } else {
+            self.db = redis.createClient(self.redisData.port,
+              self.redisData.hostname, {'no_ready_check': true, 'max_attempts': 5});
             self.db.auth(self.redisData.auth);
           }
           self.db.on('error', function(err) {
-            console.log("Error " + err);
+            console.log('Error ' + err);
           });
           process.on('SIGTERM', function() {
             self.db.quit();
@@ -270,68 +342,6 @@ function redisCacheModule(config){
       }
     }
   }
-
-  /**
-   * Initialize background refresh
-   */
-  function backgroundRefreshInit(){
-    if(!backgroundRefreshEnabled){
-      backgroundRefreshEnabled = true;
-      if(self.backgroundRefreshIntervalCheck){
-        if(self.backgroundRefreshInterval > self.backgroundRefreshMinTtl){
-          throw new exception('BACKGROUND_REFRESH_INTERVAL_EXCEPTION', 'backgroundRefreshInterval cannot be greater than backgroundRefreshMinTtl.');
-        }
-      }
-      setInterval(function(){
-        backgroundRefresh();
-      }, self.backgroundRefreshInterval);
-    }
-  }
-
-  /**
-   * Refreshes all keys that were set with a refresh function
-   */
-  function backgroundRefresh(){
-    for(key in refreshKeys){
-      if(refreshKeys.hasOwnProperty(key)){
-        var data = refreshKeys[key];
-        if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
-          data.refresh(key, function (err, response){
-            if(!err){
-              self.set(key, response, data.lifeSpan, data.refresh, noop);
-            }
-          });
-        }
-      }
-    }
-  }
-
-  /**
-   * Instantates an exception to be thrown
-   * @param {string} name
-   * @param {string} message
-   * @return {exception}
-   */
-  function exception(name, message){
-    this.name = name;
-    this.message = message;
-  }
-
-  /**
-   * Error logging logic
-   * @param {boolean} isError
-   * @param {string} message
-   * @param {object} data
-   */
-  function log(isError, message, data){
-    var indentifier = 'redisCacheModule: ';
-    if(self.verbose || isError){
-      if(data) console.log(indentifier + message, data);
-      else console.log(indentifier + message);
-    }
-  }
-
-  var noop = function(){}
 
   init();
 }
