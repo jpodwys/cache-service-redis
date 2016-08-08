@@ -1,5 +1,4 @@
 var redis = require('redis');
-var Promise = require('bluebird');
 
 /**
  * redisCacheModule constructor
@@ -62,21 +61,30 @@ function redisCacheModule(config){
   }
 
   /**
+   * Handle the refresh callback from the consumer, save the data to redis.
+   *
+   * @param {string} key The key used to save.
+   * @param {Object} data refresh keys data.
+   * @param {Error|null} err consumer callback failure.
+   * @param {*} response The consumer response.
+   */
+  function handleRefreshResponse (key, data, err, response) {
+    if(!err) {
+      this.set(key, response, data.lifeSpan, data.refresh, noop);
+    }
+  }
+
+  /**
    * Refreshes all keys that were set with a refresh function
    */
   function backgroundRefresh() {
     var keys = Object.keys(refreshKeys);
-    Promise.resolve(keys)
-      .map(function(key) {
-        var data = refreshKeys[key];
-        if(data.expiration - Date.now() < self.backgroundRefreshMinTtl){
-          data.refresh(key, function (err, response) {
-            if(!err) {
-              self.set(key, response, data.lifeSpan, data.refresh, noop);
-            }
-          });
-        }
-      });
+    keys.forEach(function(key) {
+      var data = refreshKeys[key];
+      if(data.expiration - Date.now() < this.backgroundRefreshMinTtl){
+        data.refresh(key, handleRefreshResponse.bind(this, key, data));
+      }
+    }, self);
   }
 
   /**
