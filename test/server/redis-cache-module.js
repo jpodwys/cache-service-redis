@@ -116,7 +116,6 @@ describe('redisCacheModule Tests', function () {
           cb(null, 2);
           break;
       }
-      cb(null, 1);
     };
 
     redisCache.set('one', value, 1, refresh, noop);
