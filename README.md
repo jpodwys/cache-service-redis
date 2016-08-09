@@ -118,7 +118,7 @@ When false, `cache-service-redis` will log only errors. When true, `cache-servic
 
 ## logJsonParseFailures
 
-Whether to log `JSON` errors or not
+This module automatically attempts to `JSON.stringify` values on `set` and `JSON.parse` values on `get`. In the event that either `JSON` function throws an error, the module assums the value being set or retrieved was not JSON and returns it as is. If you know you will only ever set and retrieve JSON and would therefore like errors to be logged when the JSON functions throw them, set this property to true.
 
 * type: boolean
 * default: false
