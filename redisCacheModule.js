@@ -27,6 +27,7 @@ function redisCacheModule(config){
   self.backgroundRefreshIntervalCheck = (typeof config.backgroundRefreshIntervalCheck === 'boolean') ? config.backgroundRefreshIntervalCheck : true;
   self.backgroundRefreshInterval = config.backgroundRefreshInterval || 60000;
   self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
+  self.logJsonParseFailures = config.logJsonParseFailures || false;
   var refreshKeys = {};
   var backgroundRefreshEnabled = false;
 
@@ -126,7 +127,9 @@ function redisCacheModule(config){
         try {
           result = JSON.parse(result);
         } catch (err) {
-          //Do nothing
+          if(self.logJsonParseFailures) {
+            log(true, 'Error parsing JSON, err:', err);
+          }
         }
         cb(err, result);
       });
@@ -153,7 +156,9 @@ function redisCacheModule(config){
           try {
             response[i] = JSON.parse(response[i]);
           } catch (err) {
-            //Do nothing
+            if(self.logJsonParseFailures) {
+              log(true, 'Error parsing JSON, err:', err);
+            }
           }
           obj[keys[i]] = response[i];
         }
@@ -189,7 +194,9 @@ function redisCacheModule(config){
           try {
             value = JSON.stringify(value);
           } catch (err) {
-            //Do nothing
+            if(self.logJsonParseFailures) {
+              log(true, 'Error converting to JSON, err:', err);
+            }
           }
         }
         if(refresh){
@@ -238,7 +245,9 @@ function redisCacheModule(config){
         try {
           value = JSON.stringify(value);
         } catch (err) {
-          //Do nothing
+          if(self.logJsonParseFailures) {
+            log(true, 'Error converting to JSON, err:', err);
+          }
         }
         multi.setex(key, tempExpiration, value);
       }
