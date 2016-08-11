@@ -106,14 +106,19 @@ describe('redisCacheModule Tests', function () {
     });
   });
   it('Using background refresh should work for multiple keys', function (done) {
+    function noop() {}
     this.timeout(5000);
     var refresh = function(key, cb){
       switch(key) {
         case 'one':
-          cb(null, 1);
+          setTimeout(function() {
+            cb(null, 1);
+          }, 100);
           break;
         case 'two':
-          cb(null, 2);
+          setTimeout(function() {
+            cb(null, 2);
+          }, 100);
           break;
       }
     };
