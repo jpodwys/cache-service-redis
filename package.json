@@ -4,7 +4,7 @@
   "description": "A redis plugin for cache-service.",
   "main": "redisCacheModule.js",
   "dependencies": {
-    "redis": "0.12.1"
+    "redis": "^2.6.2"
   },
   "devDependencies": {
     "mocha": "2.2.4",
