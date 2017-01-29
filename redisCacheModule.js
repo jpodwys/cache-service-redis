@@ -1,5 +1,14 @@
 var redis = require('redis');
 
+function retryStrategy (options) {
+  if (options.attempt > 5) {
+      // End reconnecting with built in error
+      return undefined;
+  }
+  // Add a bit of a delay
+  return Math.min(options.attempt * 100, 3000);
+}
+
 /**
  * redisCacheModule constructor
  * @constructor
@@ -334,25 +343,11 @@ function redisCacheModule(config){
           if(typeof self.redisData === 'string'){
             self.db = redis.createClient(self.redisData,
               {'no_ready_check': true, 
-              retry_strategy: function (options) {
-                if (options.times_connected > 5) {
-                    // End reconnecting with built in error
-                    return undefined;
-                }
-                // reconnect after
-                return Math.min(options.attempt * 100, 3000);
-              }});
+              retry_strategy: retryStrategy});
           } else {
             self.db = redis.createClient(self.redisData.port,
               self.redisData.hostname, {'no_ready_check': true, 
-              retry_strategy: function (options) {
-                if (options.times_connected > 5) {
-                    // End reconnecting with built in error
-                    return undefined;
-                }
-                // reconnect after
-                return Math.min(options.attempt * 100, 3000);
-              }});
+              retry_strategy: retryStrategy});
             self.db.auth(self.redisData.auth);
           }
           self.db.on('error', function(err) {
