@@ -372,3 +372,4 @@ function redisCacheModule(config){
 }
 
 module.exports = redisCacheModule;
+redisCacheModule._retryStrategy = retryStrategy;
