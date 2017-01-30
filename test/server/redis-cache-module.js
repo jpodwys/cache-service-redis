@@ -155,4 +155,19 @@ describe('redisCacheModule Tests', function () {
     }, 1500);
   });
 
+  it('should retry connecting when retries is less than 5 times', function() {
+    var mockOptions = {
+      attempt: 5,
+      total_retry_time: 1000,
+      times_connected: 0 };
+    expect(rcModule._retryStrategy(mockOptions)).toExist()
+  });
+
+  it('should retry connecting when retries is more than 5 times', function() {
+    var mockOptions = {
+      attempt: 6,
+      total_retry_time: 1000,
+      times_connected: 0 };
+    expect(rcModule._retryStrategy(mockOptions)).toNotExist()
+  });
 });
