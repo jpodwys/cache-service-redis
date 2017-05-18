@@ -350,7 +350,7 @@ function redisCacheModule(config){
               retry_strategy: retryStrategy});
             
             // don't call redis auth method if no auth info passed
-            if (self.redisData.auth != null) {
+            if (self.redisData.auth) {
               self.db.auth(self.redisData.auth);
             }
           }

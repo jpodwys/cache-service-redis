@@ -1,6 +1,6 @@
 {
   "name": "cache-service-redis",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A redis plugin for cache-service.",
   "main": "redisCacheModule.js",
   "dependencies": {
