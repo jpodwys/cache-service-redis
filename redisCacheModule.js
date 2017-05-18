@@ -348,7 +348,11 @@ function redisCacheModule(config){
             self.db = redis.createClient(self.redisData.port,
               self.redisData.hostname, {'no_ready_check': true, 
               retry_strategy: retryStrategy});
-            self.db.auth(self.redisData.auth);
+            
+            // don't call redis auth method if no auth info passed
+            if (self.redisData.auth != null) {
+              self.db.auth(self.redisData.auth);
+            }
           }
           self.db.on('error', function(err) {
             console.log('Error ' + err);
