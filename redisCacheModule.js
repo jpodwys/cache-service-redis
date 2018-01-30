@@ -36,7 +36,6 @@ function redisCacheModule(config){
   self.backgroundRefreshIntervalCheck = (typeof config.backgroundRefreshIntervalCheck === 'boolean') ? config.backgroundRefreshIntervalCheck : true;
   self.backgroundRefreshInterval = config.backgroundRefreshInterval || 60000;
   self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
-  self.JSON = config.JSON || Object.create(JSON);
   self.logJsonParseFailures = config.logJsonParseFailures || false;
   self.nameSpace = config.nameSpace || '';
 
@@ -148,7 +147,7 @@ function redisCacheModule(config){
       log(false, 'Attempting to get key:', {key: cacheKey});
       self.db.get(cacheKey, function(err, result){
         try {
-          result = self.JSON.parse(result);
+          result = JSON.parse(result);
         } catch (err) {
           if(self.logJsonParseFailures) {
             log(true, 'Error parsing JSON, err:', err);
@@ -178,7 +177,7 @@ function redisCacheModule(config){
       for(var i = 0; i < response.length; i++){
         if(response[i] !== null){
           try {
-            response[i] = self.JSON.parse(response[i]);
+            response[i] = JSON.parse(response[i]);
           } catch (err) {
             if(self.logJsonParseFailures) {
               log(true, 'Error parsing JSON, err:', err);
@@ -216,7 +215,7 @@ function redisCacheModule(config){
         var exp = (expiration * 1000) + Date.now();
         if(typeof value === 'object'){
           try {
-            value = self.JSON.stringify(value);
+            value = JSON.stringify(value);
           } catch (err) {
             if(self.logJsonParseFailures) {
               log(true, 'Error converting to JSON, err:', err);
@@ -268,7 +267,7 @@ function redisCacheModule(config){
           value = value.cacheValue;
         }
         try {
-          value = self.JSON.stringify(value);
+          value = JSON.stringify(value);
         } catch (err) {
           if(self.logJsonParseFailures) {
             log(true, 'Error converting to JSON, err:', err);

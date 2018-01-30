@@ -155,26 +155,7 @@ describe('redisCacheModule Tests', function () {
 
     }, 1500);
   });
-  it('Using custom JSON interface should parse JSON to custom object', function (done) {
-    this.timeout(5000);
 
-    redisCache.logJsonParseFailures = true;
-    redisCache.JSON.parse = function (text) {
-      const obj = JSON.parse(text);
-      if (obj.type === 'Buffer') {
-        return Buffer.from(obj);
-      } else {
-        return obj;
-      }
-    };
-
-    const buffer = Buffer.from([0x00, 0x61, 0x00, 0x62, 0x00, 0x63])
-    redisCache.set('bffr', buffer);
-    redisCache.get('bffr', function (err, response) {
-      expect(response).toEqual(buffer);
-      done();
-    });
-  });
   it('should retry connecting when retries is less than 5 times', function() {
     var mockOptions = {
       attempt: 5,
