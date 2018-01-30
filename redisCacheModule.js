@@ -36,8 +36,8 @@ function redisCacheModule(config){
   self.backgroundRefreshIntervalCheck = (typeof config.backgroundRefreshIntervalCheck === 'boolean') ? config.backgroundRefreshIntervalCheck : true;
   self.backgroundRefreshInterval = config.backgroundRefreshInterval || 60000;
   self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
-  self.JSON = config.JSON || Object.create(JSON);
   self.logJsonParseFailures = config.logJsonParseFailures || false;
+  self.nameSpace = config.nameSpace || '';
 
   var refreshKeys = {};
   var backgroundRefreshEnabled = false;
@@ -117,6 +117,17 @@ function redisCacheModule(config){
   }
 
   /**
+   * Prefix key with namespace
+   * @param {string} key
+   */
+  function prefixKey(key) {
+    if (self.nameSpace.length > 0 && !key.startsWith(self.nameSpace)) {
+      return `${self.nameSpace}:${key}`
+    }
+    return key;
+  }
+
+  /**
    ******************************************* PUBLIC FUNCTIONS *******************************************
    */
 
@@ -124,19 +135,17 @@ function redisCacheModule(config){
    * Get the value associated with a given key
    * @param {string} key
    * @param {function} cb
-   * @param {string} cleanKey
    */
-  self.get = function(key, cb, cleanKey){
+  self.get = function(key, cb){
     if(arguments.length < 2){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.get() requires 2 arguments.');
     }
-    log(false, 'get() called:', {key: key});
+    log(false, 'get() called:', {key});
     try {
-      var cacheKey = (cleanKey) ? cleanKey : key;
-      log(false, 'Attempting to get key:', {key: cacheKey});
-      self.db.get(cacheKey, function(err, result){
+      key = prefixKey(key);
+      self.db.get(key, function(err, result){
         try {
-          result = self.JSON.parse(result);
+          result = JSON.parse(result);
         } catch (err) {
           if(self.logJsonParseFailures) {
             log(true, 'Error parsing JSON, err:', err);
@@ -159,13 +168,14 @@ function redisCacheModule(config){
     if(arguments.length < 2){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
     }
-    log(false, '.mget() called:', {keys: keys});
-    self.db.mget(keys, function (err, response){
+    log(false, '.mget() called:', {keys});
+    var cacheKeys = keys.map(prefixKey);
+    self.db.mget(cacheKeys, function (err, response){
       var obj = {};
       for(var i = 0; i < response.length; i++){
         if(response[i] !== null){
           try {
-            response[i] = self.JSON.parse(response[i]);
+            response[i] = JSON.parse(response[i]);
           } catch (err) {
             if(self.logJsonParseFailures) {
               log(true, 'Error parsing JSON, err:', err);
@@ -192,26 +202,26 @@ function redisCacheModule(config){
     }
     var key = arguments[0];
     var value = arguments[1];
-    var expiration = arguments[2] || null;
+    var expiration = arguments[2] || self.defaultExpiration;
     var refresh = (arguments.length === 5) ? arguments[3] : null;
     var cb = (arguments.length === 5) ? arguments[4] : arguments[3];
     cb = cb || noop;
-    log(false, '.set() called:', {key: key, value: value});
+    log(false, '.set() called:', {key, value});
     try {
       if(!self.readOnly){
-        expiration = expiration || self.defaultExpiration;
         var exp = (expiration * 1000) + Date.now();
         if(typeof value === 'object'){
           try {
-            value = self.JSON.stringify(value);
+            value = JSON.stringify(value);
           } catch (err) {
             if(self.logJsonParseFailures) {
               log(true, 'Error converting to JSON, err:', err);
             }
           }
         }
+        var cacheKey = prefixKey(key);
         if(refresh){
-          self.db.set(key, value, 'nx', 'ex', expiration, function (err, response){
+          self.db.set(cacheKey, value, 'nx', 'ex', expiration, function (err, response){
 
             refreshKeys[key] = {expiration: exp, lifeSpan: expiration, refresh: refresh};
 
@@ -220,12 +230,12 @@ function redisCacheModule(config){
               backgroundRefreshInit();
             }
             else{
-              self.db.setex(key, expiration, value, cb);
+              self.db.setex(cacheKey, expiration, value, cb);
             }
           });
         }
         else{
-          self.db.setex(key, expiration, value, cb);
+          self.db.setex(cacheKey, expiration, value, cb);
         }
       }
     }catch (err) {
@@ -254,13 +264,13 @@ function redisCacheModule(config){
           value = value.cacheValue;
         }
         try {
-          value = self.JSON.stringify(value);
+          value = JSON.stringify(value);
         } catch (err) {
           if(self.logJsonParseFailures) {
             log(true, 'Error converting to JSON, err:', err);
           }
         }
-        multi.setex(key, tempExpiration, value);
+        multi.setex(prefixKey(key), tempExpiration, value);
       }
     }
     multi.exec(function (err, replies){
@@ -279,9 +289,16 @@ function redisCacheModule(config){
     if(arguments.length < 1){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
     }
+    var cacheKeys;
+    if(typeof keys === 'object') {
+      cacheKeys = keys.map(prefixKey);
+    }
+    else {
+      cacheKeys = prefixKey(keys);
+    }
     log(false, '.del() called:', {keys: keys});
     try {
-      self.db.del(keys, function (err, count){
+      self.db.del(cacheKeys, function (err, count){
         if(cb){
           cb(err, count);
         }

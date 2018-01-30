@@ -3,7 +3,8 @@ var redisMock = require('redis-js');
 var rcModule = require('../../redisCacheModule');
 var redisCache = new rcModule({
   redisMock: redisMock,
-  backgroundRefreshInterval: 500
+  backgroundRefreshInterval: 500,
+  nameSpace: 'test'
 });
 
 var key = 'key';
@@ -26,6 +27,9 @@ describe('redisCacheModule Tests', function () {
     redisCache.set(key, value);
     redisCache.get(key, function (err, result) {
       expect(result).toBe(value);
+    });
+    redisCache.db.get(`test:${key}`, function (err, result) {
+      expect(result).toBe(value);
       done();
     });
   });
@@ -33,6 +37,9 @@ describe('redisCacheModule Tests', function () {
     redisCache.set(key, value);
     redisCache.del(key);
     redisCache.get(key, function (err, result) {
+      expect(result).toBe(null);
+    });
+    redisCache.db.get(`test:${key}`, function (err, result) {
       expect(result).toBe(null);
       done();
     });
@@ -44,6 +51,9 @@ describe('redisCacheModule Tests', function () {
     redisCache.db.keys('*', function (err, keys){
       var keyCount = keys.length;
       expect(keyCount).toBe(3);
+      for(var key of keys) {
+        expect(key).toMatch(/^test:key[2-3]?$/);
+      }
       redisCache.flush();
       redisCache.db.keys('*', function (err, keys){
         keyCount = keys.length;
@@ -71,8 +81,15 @@ describe('redisCacheModule Tests', function () {
         expect(response.key2).toBe('value2');
         expect(response.key3).toBe('value3');
         expect(response.key4).toBe(undefined);
-        done();
       });
+    });
+    redisCache.db.keys('*', function (err, keys) {
+      var keyCount = keys.length;
+      expect(keyCount).toBe(3);
+      for (var key of keys) {
+        expect(key).toMatch(/^test:key[2-3]?$/);
+      }
+      done();
     });
   });
   it('Using background refresh should not activate for a key that already exists', function (done) {
@@ -154,26 +171,7 @@ describe('redisCacheModule Tests', function () {
 
     }, 1500);
   });
-  it('Using custom JSON interface should parse JSON to custom object', function (done) {
-    this.timeout(5000);
 
-    redisCache.logJsonParseFailures = true;
-    redisCache.JSON.parse = function (text) {
-      const obj = JSON.parse(text);
-      if (obj.type === 'Buffer') {
-        return Buffer.from(obj);
-      } else {
-        return obj;
-      }
-    };
-
-    const buffer = Buffer.from([0x00, 0x61, 0x00, 0x62, 0x00, 0x63])
-    redisCache.set('bffr', buffer);
-    redisCache.get('bffr', function (err, response) {
-      expect(response).toEqual(buffer);
-      done();
-    });
-  });
   it('should retry connecting when retries is less than 5 times', function() {
     var mockOptions = {
       attempt: 5,
