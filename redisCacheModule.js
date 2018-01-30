@@ -38,6 +38,7 @@ function redisCacheModule(config){
   self.backgroundRefreshMinTtl = config.backgroundRefreshMinTtl || 70000;
   self.JSON = config.JSON || Object.create(JSON);
   self.logJsonParseFailures = config.logJsonParseFailures || false;
+  self.nameSpace = config.nameSpace || '';
 
   var refreshKeys = {};
   var backgroundRefreshEnabled = false;
@@ -117,6 +118,17 @@ function redisCacheModule(config){
   }
 
   /**
+   * Prefix key with namespace
+   * @param {string} key
+   */
+  function prefixKey(key) {
+    if (self.nameSpace.length > 0 && !key.startsWith(self.nameSpace)) {
+      return `${self.nameSpace}:${key}`
+    }
+    return key;
+  }
+
+  /**
    ******************************************* PUBLIC FUNCTIONS *******************************************
    */
 
@@ -132,7 +144,7 @@ function redisCacheModule(config){
     }
     log(false, 'get() called:', {key: key});
     try {
-      var cacheKey = (cleanKey) ? cleanKey : key;
+      var cacheKey = (cleanKey) ? cleanKey : prefixKey(key);
       log(false, 'Attempting to get key:', {key: cacheKey});
       self.db.get(cacheKey, function(err, result){
         try {
@@ -159,8 +171,9 @@ function redisCacheModule(config){
     if(arguments.length < 2){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
     }
+    cacheKeys = keys.map(prefixKey);
     log(false, '.mget() called:', {keys: keys});
-    self.db.mget(keys, function (err, response){
+    self.db.mget(cacheKeys, function (err, response){
       var obj = {};
       for(var i = 0; i < response.length; i++){
         if(response[i] !== null){
@@ -210,8 +223,9 @@ function redisCacheModule(config){
             }
           }
         }
+        var cacheKey = prefixKey(key);
         if(refresh){
-          self.db.set(key, value, 'nx', 'ex', expiration, function (err, response){
+          self.db.set(cacheKey, value, 'nx', 'ex', expiration, function (err, response){
 
             refreshKeys[key] = {expiration: exp, lifeSpan: expiration, refresh: refresh};
 
@@ -225,7 +239,7 @@ function redisCacheModule(config){
           });
         }
         else{
-          self.db.setex(key, expiration, value, cb);
+          self.db.setex(cacheKey, expiration, value, cb);
         }
       }
     }catch (err) {
@@ -260,7 +274,7 @@ function redisCacheModule(config){
             log(true, 'Error converting to JSON, err:', err);
           }
         }
-        multi.setex(key, tempExpiration, value);
+        multi.setex(prefixKey(key), tempExpiration, value);
       }
     }
     multi.exec(function (err, replies){
@@ -278,6 +292,12 @@ function redisCacheModule(config){
   self.del = function(keys, cb){
     if(arguments.length < 1){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
+    }
+    if(keys === 'object') {
+      keys = keys.map(prefixKey);
+    }
+    else {
+      keys = prefixKey(keys);
     }
     log(false, '.del() called:', {keys: keys});
     try {

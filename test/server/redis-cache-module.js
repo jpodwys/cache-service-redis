@@ -3,7 +3,8 @@ var redisMock = require('redis-js');
 var rcModule = require('../../redisCacheModule');
 var redisCache = new rcModule({
   redisMock: redisMock,
-  backgroundRefreshInterval: 500
+  backgroundRefreshInterval: 500,
+  nameSpace: 'test'
 });
 
 var key = 'key';
