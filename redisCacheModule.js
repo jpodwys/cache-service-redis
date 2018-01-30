@@ -143,7 +143,6 @@ function redisCacheModule(config){
     log(false, 'get() called:', {key});
     try {
       key = prefixKey(key);
-      log(false, 'Attempting to get key:', {key});
       self.db.get(key, function(err, result){
         try {
           result = JSON.parse(result);
@@ -169,8 +168,8 @@ function redisCacheModule(config){
     if(arguments.length < 2){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.mget() requires 2 arguments.');
     }
-    cacheKeys = keys.map(prefixKey);
-    log(false, '.mget() called:', {keys: keys});
+    log(false, '.mget() called:', {keys});
+    var cacheKeys = keys.map(prefixKey);
     self.db.mget(cacheKeys, function (err, response){
       var obj = {};
       for(var i = 0; i < response.length; i++){
@@ -203,14 +202,13 @@ function redisCacheModule(config){
     }
     var key = arguments[0];
     var value = arguments[1];
-    var expiration = arguments[2] || null;
+    var expiration = arguments[2] || self.defaultExpiration;
     var refresh = (arguments.length === 5) ? arguments[3] : null;
     var cb = (arguments.length === 5) ? arguments[4] : arguments[3];
     cb = cb || noop;
-    log(false, '.set() called:', {key: key, value: value});
+    log(false, '.set() called:', {key, value});
     try {
       if(!self.readOnly){
-        expiration = expiration || self.defaultExpiration;
         var exp = (expiration * 1000) + Date.now();
         if(typeof value === 'object'){
           try {
@@ -232,7 +230,7 @@ function redisCacheModule(config){
               backgroundRefreshInit();
             }
             else{
-              self.db.setex(key, expiration, value, cb);
+              self.db.setex(cacheKey, expiration, value, cb);
             }
           });
         }
@@ -291,15 +289,16 @@ function redisCacheModule(config){
     if(arguments.length < 1){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
     }
+    var cacheKeys;
     if(typeof keys === 'object') {
-      keys = keys.map(prefixKey);
+      cacheKeys = keys.map(prefixKey);
     }
     else {
-      keys = prefixKey(keys);
+      cacheKeys = prefixKey(keys);
     }
     log(false, '.del() called:', {keys: keys});
     try {
-      self.db.del(keys, function (err, count){
+      self.db.del(cacheKeys, function (err, count){
         if(cb){
           cb(err, count);
         }
