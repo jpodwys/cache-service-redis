@@ -135,17 +135,16 @@ function redisCacheModule(config){
    * Get the value associated with a given key
    * @param {string} key
    * @param {function} cb
-   * @param {string} cleanKey
    */
-  self.get = function(key, cb, cleanKey){
+  self.get = function(key, cb){
     if(arguments.length < 2){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.get() requires 2 arguments.');
     }
-    log(false, 'get() called:', {key: key});
+    log(false, 'get() called:', {key});
     try {
-      var cacheKey = (cleanKey) ? cleanKey : prefixKey(key);
-      log(false, 'Attempting to get key:', {key: cacheKey});
-      self.db.get(cacheKey, function(err, result){
+      key = prefixKey(key);
+      log(false, 'Attempting to get key:', {key});
+      self.db.get(key, function(err, result){
         try {
           result = JSON.parse(result);
         } catch (err) {
