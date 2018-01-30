@@ -292,7 +292,7 @@ function redisCacheModule(config){
     if(arguments.length < 1){
       throw new Exception('INCORRECT_ARGUMENT_EXCEPTION', '.del() requires a minimum of 1 argument.');
     }
-    if(keys === 'object') {
+    if(typeof keys === 'object') {
       keys = keys.map(prefixKey);
     }
     else {
