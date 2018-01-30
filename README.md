@@ -78,6 +78,12 @@ If you have a redis URL contained in an env variable (in process.env[redisEnv]),
 
 * type: string
 
+## JSON
+
+By default, `cache-service-redis` attempts to `JSON.stringify` and `JSON.parse` values on `set` and `get` respectively. If it fails, it just sets/gets the raw value. This may not always meet your needs. As such, you can provide your own object with `stringify` and `parse` public functions.
+
+* type: object
+
 ## redisMock
 
 If you want to test your `cache-service-redis` implementation, you can pass a redis mock with this key and `cache-service-redis` will consume it for testing purposes. See the [Using A Redis Mock](#using-a-redis-mock) section for a more throrough explanation.
