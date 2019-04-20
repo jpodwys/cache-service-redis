@@ -250,3 +250,23 @@ var redisCache = new rcModule({
   backgroundRefreshInterval: 500
 });
 ```
+
+# More Usage Examples
+## AWS Lambda
+If you use `cache-service-redis` in a lambda function with callback make sure to disable `callbackWaitsForEmptyEventLoop` in the lambda context. If this is enabled the lambda function won't terminate.
+```javascript
+exports.handler = function (event, context, callback) {
+  superagent
+    .get(uri)
+    .use(superagentCache)
+    .end(function (err, response){
+      // handle response here
+      // terminate process with `context`
+      return context.succeed();
+      // OR terminate process with `callback`
+      context.callbackWaitsForEmptyEventLoop = false;
+      return callback(null);
+    }
+  );
+};
+```
