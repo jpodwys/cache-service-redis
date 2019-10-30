@@ -44,7 +44,7 @@ An arbitrary identifier you can assign so you know which cache is responsible fo
 
 ## defaultExpiration
 
-The expiration to include when executing cache set commands. Can be overridden via `.set()`'s optional expiraiton param.
+The expiration to include when executing cache set commands. Can be overridden via `.set()`'s optional expiration param.
 
 * type: int
 * default: 900
@@ -151,7 +151,7 @@ Retrieve the values belonging to a series of keys. If a key is not found, it wil
 * err: type: object
 * response: type: object, example: {key: 'value', key2: 'value2'...}
 
-## .set(key, value, [expiraiton], [refresh(key, cb)], [callback])
+## .set(key, value, [expiration], [refresh(key, cb)], [callback])
 
 > See the [Using Background Refresh](#using-background-refresh) section for more about the `refresh` and `callback` params.
 
