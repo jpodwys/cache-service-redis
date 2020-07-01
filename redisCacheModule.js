@@ -173,16 +173,18 @@ function redisCacheModule(config){
     var cacheKeys = keys.map(prefixKey);
     self.db.mget(cacheKeys, function (err, response){
       var obj = {};
-      for(var i = 0; i < response.length; i++){
-        if(response[i] !== null){
-          try {
-            response[i] = self.JSON.parse(response[i]);
-          } catch (err) {
-            if(self.logJsonParseFailures) {
-              log(true, 'Error parsing JSON, err:', err);
+      if(!err && response) {
+        for(var i = 0; i < response.length; i++){
+          if(response[i] !== null){
+            try {
+              response[i] = self.JSON.parse(response[i]);
+            } catch (err) {
+              if(self.logJsonParseFailures) {
+                log(true, 'Error parsing JSON, err:', err);
+              }
             }
+            obj[keys[i]] = response[i];
           }
-          obj[keys[i]] = response[i];
         }
       }
       cb(err, obj, index);
